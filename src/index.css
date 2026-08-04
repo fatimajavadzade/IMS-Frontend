@@ -1,0 +1,65 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap");
+
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* Brand */
+  --color-brand-50: #eef1fa;
+  --color-brand-100: #dde3f5;
+  --color-brand-200: #b6c1e8;
+  --color-brand-300: #8a9bd6;
+  --color-brand-400: #5c72bf;
+  --color-brand-500: #38509f;
+  --color-brand-600: #263a7e;
+  --color-brand-700: #1c2c63;
+  --color-brand-800: #16224e;
+  --color-brand-900: #101a3c;
+
+  /* Ink */
+  --color-ink-50: #fafbfc;
+  --color-ink-100: #eef0f6;
+  --color-ink-200: #d9ddea;
+  --color-ink-300: #9aa4bd;
+  --color-ink-400: #7a859f;
+  --color-ink-500: #5b6785;
+  --color-ink-600: #44506b;
+  --color-ink-700: #2b3550;
+  --color-ink-800: #1d263d;
+  --color-ink-900: #131a2c;
+  --color-ink-950: #0b0f1c;
+
+  /* Success */
+  --color-good-50: #f0fdf4;
+  --color-good-100: #dcf5e4;
+  --color-good-200: #bbebcb;
+  --color-good-500: #22c55e;
+  --color-good-700: #15803d;
+
+  /* Warning */
+  --color-warn-50: #fff8eb;
+  --color-warn-100: #fdead2;
+  --color-warn-200: #f8c98c;
+  --color-warn-500: #f59e0b;
+  --color-warn-700: #c2650a;
+
+  /* Error */
+  --color-bad-50: #fff5f5;
+  --color-bad-100: #fbe0e0;
+  --color-bad-200: #f6b6b6;
+  --color-bad-500: #ef4444;
+  --color-bad-700: #c22b2b;
+
+  /* Surface */
+  --color-surface: #ffffff;
+  --color-surface-secondary: #f8fafc;
+  --color-surface-tertiary: #f1f5f9;
+
+  /* Fonts */
+  --font-display: "Space Grotesk", sans-serif;
+  --font-sans: "Inter", sans-serif;
+
+  /* Radius */
+  --radius-xl2: 1.1rem;
+}
