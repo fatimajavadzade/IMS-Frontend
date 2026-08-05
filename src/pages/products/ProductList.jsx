@@ -123,9 +123,9 @@ const ProductList = () => {
       header: "Məhsul",
       render: (row) => (
         <div className="flex items-center gap-3">
-          {row.imageUrl ? (
+          {row.imageName ? (
             <img
-              src={row.imageUrl}
+              src={`http://localhost:8080/api/products/images/${row.imageName}`}
               alt={row.name}
               className="h-10 w-10 shrink-0 rounded-lg object-cover"
             />

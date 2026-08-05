@@ -14,6 +14,7 @@ import WarehouseForm from "./pages/warehouses/WarehouseForm";
 
 import StockList from "./pages/stocks/StockList";
 import PurchaseList from "./pages/purchases/PurchaseList";
+import TransferList from "./pages/transfers/TransferList";
 
 function App() {
   return (
@@ -35,6 +36,8 @@ function App() {
           <Route path="/stock" element={<StockList />} />
 
           <Route path="/purchases" element={<PurchaseList />} />
+
+          <Route path="/transfers" element={<TransferList />} />
         </Route>
       </Route>
 
