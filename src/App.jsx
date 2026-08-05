@@ -13,6 +13,7 @@ import WarehouseList from "./pages/warehouses/WarehouseList";
 import WarehouseForm from "./pages/warehouses/WarehouseForm";
 
 import StockList from "./pages/stocks/StockList";
+import PurchaseList from "./pages/purchases/PurchaseList";
 
 function App() {
   return (
@@ -32,6 +33,8 @@ function App() {
           <Route path="/warehouses/:id/edit" element={<WarehouseForm />} />
 
           <Route path="/stock" element={<StockList />} />
+
+          <Route path="/purchases" element={<PurchaseList />} />
         </Route>
       </Route>
 

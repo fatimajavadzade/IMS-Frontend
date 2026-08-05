@@ -202,7 +202,7 @@ function WarehouseList() {
                     Redaktə et
                   </Button>
 
-                  <Button
+                  {/* <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setDeletingId(warehouse.id)}
@@ -210,7 +210,7 @@ function WarehouseList() {
                   >
                     <Trash2 className="h-4 w-4" />
                     Sil
-                  </Button>
+                  </Button> */}
                 </div>
               </div>
             );
