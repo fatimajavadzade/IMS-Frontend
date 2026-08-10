@@ -22,7 +22,7 @@ const links = [
   { to: "/warehouses", label: "Anbarlar", icon: Warehouse },
   { to: "/stock", label: "Stok", icon: Boxes },
   { to: "/customers", label: "Müştərilər", icon: Users },
-  { to: "/sales", label: "Satış", icon: ShoppingCart },
+  { to: "/orders", label: "Satış", icon: ShoppingCart },
   { to: "/purchases", label: "Satınalma", icon: Truck },
   { to: "/transfers", label: "Hərəkətlər", icon: Repeat },
   { to: "/reports", label: "Hesabatlar", icon: FileBarChart },

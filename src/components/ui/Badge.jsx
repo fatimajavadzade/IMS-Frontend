@@ -9,7 +9,7 @@ const tones = {
 const Badge = ({ tone = "neutral", children }) => {
   return (
     <span
-      className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${tones[tone]}`}
+      className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap ${tones[tone]}`}
     >
       {children}
     </span>
