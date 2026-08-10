@@ -26,7 +26,7 @@ import { useUpdateWarehouse } from "../../hooks/warehouses/useUpdateWarehouse";
 import { useActivateWarehouse } from "../../hooks/warehouses/useActivateWarehouse";
 import { useDeactivateWarehouse } from "../../hooks/warehouses/useDeactivateWarehouse";
 
-import { useUsers } from "../../hooks/users/useUsers";
+import { useManagers } from "../../hooks/users/useManagers";
 
 const featureCards = [
   { icon: Shield, label: "Təhlükəsizlik", value: "24/7 Mühafizə" },
@@ -40,7 +40,7 @@ function WarehouseForm() {
   const navigate = useNavigate();
 
   const { data: warehouse, isLoading } = useWarehouse(id);
-  const { data: users = [] } = useUsers();
+  const { data: managers = [] } = useManagers();
 
   const createWarehouseMutation = useCreateWarehouse();
   const updateWarehouseMutation = useUpdateWarehouse();
@@ -190,7 +190,7 @@ function WarehouseForm() {
                 })}
               >
                 <option value="">Seçin</option>
-                {users.map((m) => (
+                {managers.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.email}
                   </option>
