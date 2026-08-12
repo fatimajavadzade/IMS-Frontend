@@ -223,10 +223,10 @@ const ProductList = () => {
           placeholder="Məhsul adı, SKU və ya barkod..."
           className="min-w-[220px] flex-1"
         />
-        <Button variant="secondary">
+        {/* <Button variant="secondary">
           <Filter className="h-4 w-4" />
           Filtr
-        </Button>
+        </Button> */}
       </div>
 
       <div className="overflow-hidden rounded-xl border border-ink-100 bg-white dark:border-white/10 dark:bg-ink-900">

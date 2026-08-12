@@ -17,6 +17,7 @@ import PurchaseList from "./pages/purchases/PurchaseList";
 import TransferList from "./pages/transfers/TransferList";
 import CustomerList from "./pages/customers/CustomerList";
 import OrderList from "./pages/orders/OrderList";
+import Reports from "./pages/reports/Reports";
 
 function App() {
   return (
@@ -44,6 +45,8 @@ function App() {
           <Route path="/transfers" element={<TransferList />} />
 
           <Route path="/customers" element={<CustomerList />} />
+
+          <Route path="/reports" element={<Reports />} />
         </Route>
       </Route>
 
