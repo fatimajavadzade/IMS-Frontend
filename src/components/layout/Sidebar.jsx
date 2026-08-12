@@ -16,6 +16,8 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import toast from "react-hot-toast";
 
+import { useLogout } from "../../hooks/auth/useLogout.js";
+
 const links = [
   { to: "/dashboard", label: "Panel", icon: LayoutDashboard },
   { to: "/products", label: "Məhsullar", icon: Package },
@@ -26,20 +28,29 @@ const links = [
   { to: "/purchases", label: "Satınalma", icon: Truck },
   { to: "/transfers", label: "Hərəkətlər", icon: Repeat },
   { to: "/reports", label: "Hesabatlar", icon: FileBarChart },
+  { to: "/settings/password", label: "Settings", icon: Settings },
 ];
 
 function Sidebar() {
-  const { logout } = useAuth();
+  const { refreshToken, logout } = useAuth();
+  const logoutMutation = useLogout();
 
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout();
+    logoutMutation.mutate(
+      { refreshToken },
+      {
+        onSettled: () => {
+          logout();
 
-    toast.success("Hesabdan çıxış edildi.");
+          toast.success("Hesabdan çıxış edildi.");
 
-    navigate("/login", { replace: true });
-  }; //! logout funksiyası deyisecek
+          navigate("/login", { replace: true });
+        },
+      },
+    );
+  };
 
   return (
     <aside className="hidden h-screen w-64 shrink-0 flex-col border-r border-ink-100 bg-white md:flex dark:border-white/10 dark:bg-ink-900">
@@ -84,9 +95,10 @@ function Sidebar() {
         <button
           onClick={handleLogout}
           type="button"
+          disabled={logoutMutation.isPending}
           aria-label="Çıxış"
           title="Çıxış"
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-bad-700 hover:bg-bad-100/60 dark:text-bad-400 dark:hover:bg-bad-500/10"
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-bad-700 hover:bg-bad-100/60 disabled:cursor-not-allowed disabled:opacity-60 dark:text-bad-400 dark:hover:bg-bad-500/10"
         >
           <LogOut className="h-4 w-4" />
           Çıxış

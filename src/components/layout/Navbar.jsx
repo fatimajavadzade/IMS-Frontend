@@ -4,19 +4,29 @@ import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
+import { useLogout } from "../../hooks/auth/useLogout.js";
+
 function Navbar() {
   const { theme, toggleTheme } = useTheme();
-  const { user, logout } = useAuth();
+  const { user, refreshToken, logout } = useAuth();
+  const logoutMutation = useLogout();
 
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout();
+    logoutMutation.mutate(
+      { refreshToken },
+      {
+        onSettled: () => {
+          logout();
 
-    toast.success("Hesabdan çıxış edildi.");
+          toast.success("Hesabdan çıxış edildi.");
 
-    navigate("/login", { replace: true });
-  }; //! logout funksiyası deyisecek
+          navigate("/login", { replace: true });
+        },
+      },
+    );
+  };
 
   return (
     <header className="flex h-16 shrink-0 items-center justify-end gap-4 border-b border-ink-100 bg-white px-6 dark:border-white/10 dark:bg-ink-900">
@@ -50,9 +60,10 @@ function Navbar() {
           <button
             onClick={handleLogout}
             type="button"
+            disabled={logoutMutation.isPending}
             aria-label="Çıxış"
             title="Çıxış"
-            className="ml-1 rounded-lg p-2 text-ink-500 transition hover:bg-ink-100/60 hover:text-bad-700 dark:text-ink-400 dark:hover:bg-white/5 dark:hover:text-bad-400"
+            className="ml-1 rounded-lg p-2 text-ink-500 transition hover:bg-ink-100/60 hover:text-bad-700 disabled:cursor-not-allowed disabled:opacity-60 dark:text-ink-400 dark:hover:bg-white/5 dark:hover:text-bad-400"
           >
             <LogOut className="h-4 w-4" />
           </button>

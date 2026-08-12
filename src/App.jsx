@@ -18,6 +18,7 @@ import TransferList from "./pages/transfers/TransferList";
 import CustomerList from "./pages/customers/CustomerList";
 import OrderList from "./pages/orders/OrderList";
 import Reports from "./pages/reports/Reports";
+import ChangePassword from "./pages/settings/ChangePassword";
 
 function App() {
   return (
@@ -37,16 +38,13 @@ function App() {
           <Route path="/warehouses/:id/edit" element={<WarehouseForm />} />
 
           <Route path="/stock" element={<StockList />} />
-
           <Route path="/orders" element={<OrderList />} />
-
           <Route path="/purchases" element={<PurchaseList />} />
-
           <Route path="/transfers" element={<TransferList />} />
-
           <Route path="/customers" element={<CustomerList />} />
-
           <Route path="/reports" element={<Reports />} />
+
+          <Route path="/settings/password" element={<ChangePassword />} />
         </Route>
       </Route>
 
