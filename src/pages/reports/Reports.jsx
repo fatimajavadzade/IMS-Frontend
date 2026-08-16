@@ -83,7 +83,7 @@ const Reports = () => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `hesabat-${tab}-${year}.xlsx`;
+      link.download = `hesabat-${tab}-${year}.csv`;
       document.body.appendChild(link);
       link.click();
       link.remove();
