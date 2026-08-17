@@ -5,7 +5,6 @@ import {
   BadgePercent,
   TrendingUp,
   Plus,
-  Filter,
   Pencil,
   Trash2,
   Tag,

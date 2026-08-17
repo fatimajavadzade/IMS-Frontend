@@ -4,7 +4,6 @@ import {
   Plus,
   Warehouse as WarehouseIcon,
   Pencil,
-  Trash2,
   MapPin,
   Power,
   PowerOff,

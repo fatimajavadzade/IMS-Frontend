@@ -1,4 +1,3 @@
-//! baxilmayib
 function Pagination({ page, totalPages = 1, onChange, totalItems, pageSize }) {
   const from = totalItems === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(page * pageSize, totalItems ?? 0);

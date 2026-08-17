@@ -21,8 +21,6 @@ import toast from "react-hot-toast";
 
 import { useLogout } from "../../hooks/auth/useLogout.js";
 
-const COLLAPSED_KEY = "ims-sidebar-collapsed";
-
 const links = [
   { to: "/dashboard", label: "Panel", icon: LayoutDashboard },
   { to: "/products", label: "Məhsullar", icon: Package },
@@ -43,13 +41,16 @@ function Sidebar() {
   const navigate = useNavigate();
 
   const [collapsed, setCollapsed] = useState(
-    () => localStorage.getItem(COLLAPSED_KEY) === "true",
+    () => localStorage.getItem("ims-sidebar-collapsed") === "true",
   );
 
   const toggleCollapsed = () => {
     setCollapsed((prev) => {
       const isCollapsed = !prev;
-      localStorage.setItem(COLLAPSED_KEY, isCollapsed ? "true" : "false");
+      localStorage.setItem(
+        "ims-sidebar-collapsed",
+        isCollapsed ? "true" : "false",
+      );
       return isCollapsed;
     });
   };

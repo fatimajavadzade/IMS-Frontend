@@ -165,7 +165,7 @@ const CustomerList = () => {
             setPage(1);
           }}
           placeholder="Şirkət adı, VÖEN, əlaqədar şəxs..."
-          className="min-w-[220px] flex-1"
+          className="min-w-55 flex-1"
         />
       </div>
 

@@ -1,4 +1,3 @@
-// Backend-dən gələn anbarlararası hərəkət (transfer) statusları.
 export const TRANSFER_STATUS = {
   PENDING: "PENDING",
   IN_TRANSIT: "IN_TRANSIT",

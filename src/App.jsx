@@ -19,6 +19,7 @@ import CustomerList from "./pages/customers/CustomerList";
 import OrderList from "./pages/orders/OrderList";
 import Reports from "./pages/reports/Reports";
 import ChangePassword from "./pages/settings/ChangePassword";
+import NotFound from "./pages/NotFound";
 
 function App() {
   return (
@@ -26,7 +27,6 @@ function App() {
       <Route index element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
@@ -47,9 +47,7 @@ function App() {
           <Route path="/settings/password" element={<ChangePassword />} />
         </Route>
       </Route>
-
-      {/* 404 */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

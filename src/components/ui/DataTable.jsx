@@ -1,14 +1,12 @@
 import { Inbox } from "lucide-react";
 import EmptyState from "./EmptyState.jsx";
 
-/**
- * Generic cədvəl komponenti.
- * columns: [{ key, header, render?(row) }]
- * rowKey: (row) => unikal id
- */
-
-//! baxilmayib
-const DataTable = ({ columns, data = [], rowKey, emptyText = "Nəticə tapılmadı" }) => {
+const DataTable = ({
+  columns,
+  data = [],
+  rowKey,
+  emptyText = "Nəticə tapılmadı",
+}) => {
   if (!data.length) {
     return <EmptyState icon={Inbox} title={emptyText} />;
   }
@@ -26,9 +24,15 @@ const DataTable = ({ columns, data = [], rowKey, emptyText = "Nəticə tapılmad
       </thead>
       <tbody>
         {data.map((row) => (
-          <tr key={rowKey(row)} className="border-b border-ink-100 last:border-0 hover:bg-ink-100/30 dark:border-white/10 dark:hover:bg-white/5">
+          <tr
+            key={rowKey(row)}
+            className="border-b border-ink-100 last:border-0 hover:bg-ink-100/30 dark:border-white/10 dark:hover:bg-white/5"
+          >
             {columns.map((col) => (
-              <td key={col.key} className="px-5 py-4 align-middle text-ink-700 dark:text-ink-300">
+              <td
+                key={col.key}
+                className="px-5 py-4 align-middle text-ink-700 dark:text-ink-300"
+              >
                 {col.render ? col.render(row) : row[col.key]}
               </td>
             ))}

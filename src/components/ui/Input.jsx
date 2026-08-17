@@ -1,5 +1,3 @@
-import React from "react";
-
 function Input({ className = "", error = false, ...props }) {
   return (
     <input

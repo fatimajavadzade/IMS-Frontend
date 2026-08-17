@@ -17,7 +17,6 @@ import Button from "../../components/ui/Button.jsx";
 import Select from "../../components/ui/Select.jsx";
 import Input from "../../components/ui/Input.jsx";
 import StatCard from "../../components/ui/StatCard.jsx";
-import DataTable from "../../components/ui/DataTable.jsx";
 import Spinner from "../../components/ui/Spinner.jsx";
 
 import { useWarehouses } from "../../hooks/warehouses/useWarehouses";

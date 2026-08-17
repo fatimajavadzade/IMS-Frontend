@@ -5,8 +5,6 @@ import {
   ChevronRight,
   Info,
   MapPin,
-  Power,
-  PowerOff,
   Shield,
   Thermometer,
   Truck,
@@ -14,7 +12,6 @@ import {
 import toast from "react-hot-toast";
 
 import Button from "../../components/ui/Button.jsx";
-import Badge from "../../components/ui/Badge.jsx";
 import FormField from "../../components/ui/FormField.jsx";
 import Input from "../../components/ui/Input.jsx";
 import Select from "../../components/ui/Select.jsx";
@@ -23,8 +20,6 @@ import AddressMapPicker from "../../components/maps/AddressMapPicker.jsx";
 import { useWarehouse } from "../../hooks/warehouses/useWarehouse";
 import { useCreateWarehouse } from "../../hooks/warehouses/useCreateWarehouse";
 import { useUpdateWarehouse } from "../../hooks/warehouses/useUpdateWarehouse";
-import { useActivateWarehouse } from "../../hooks/warehouses/useActivateWarehouse";
-import { useDeactivateWarehouse } from "../../hooks/warehouses/useDeactivateWarehouse";
 
 import { useManagers } from "../../hooks/users/useManagers";
 
@@ -44,8 +39,6 @@ function WarehouseForm() {
 
   const createWarehouseMutation = useCreateWarehouse();
   const updateWarehouseMutation = useUpdateWarehouse();
-  const activateWarehouseMutation = useActivateWarehouse();
-  const deactivateWarehouseMutation = useDeactivateWarehouse();
 
   const [location, setLocation] = useState({
     lat: null,
