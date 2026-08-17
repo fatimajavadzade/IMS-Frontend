@@ -193,8 +193,7 @@ function WarehouseForm() {
             <FormField label="Ümumi Tutum">
               <Input
                 type="number"
-                step="0.01"
-                placeholder="0.00"
+                placeholder="0"
                 {...register("capacity")}
               />
             </FormField>
