@@ -12,15 +12,20 @@ import PageHeader from "../../components/ui/PageHeader.jsx";
 import StatCard from "../../components/ui/StatCard.jsx";
 import Button from "../../components/ui/Button.jsx";
 import Input from "../../components/ui/Input.jsx";
+import Select from "../../components/ui/Select.jsx";
 import Badge from "../../components/ui/Badge.jsx";
 import DataTable from "../../components/ui/DataTable.jsx";
 import Pagination from "../../components/ui/Pagination.jsx";
 import Spinner from "../../components/ui/Spinner.jsx";
 
 import { useOrders } from "../../hooks/orders/useOrders";
+import { useOrdersPage } from "../../hooks/orders/useOrdersPage";
+import { useWarehouses } from "../../hooks/warehouses/useWarehouses";
+import { useCustomers } from "../../hooks/customers/useCustomers";
 import {
   ORDER_STATUS_LABELS,
   ORDER_STATUS_TONES,
+  ORDER_STATUS_OPTIONS,
 } from "../../constants/orderStatus.js";
 
 import OrderFormModal from "./OrderFormModal.jsx";
@@ -35,27 +40,52 @@ const formatMoney = (value) =>
   }).format(value ?? 0);
 
 const OrderList = () => {
-  const { data: orders = [], isLoading } = useOrders();
+  // Full (unpaged) list is kept only to power the aggregate stat cards below,
+  // since /api/orders/page only returns one page of results at a time.
+  const { data: orders = [] } = useOrders();
+  const { data: warehouses = [] } = useWarehouses();
+  const { data: customers = [] } = useCustomers();
 
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
+  const [status, setStatus] = useState("");
+  const [warehouseId, setWarehouseId] = useState("");
+  const [customerId, setCustomerId] = useState("");
+  const [page, setPage] = useState(1); // 1-indexed for the UI/Pagination component
   const [formOpen, setFormOpen] = useState(false);
   const [viewingId, setViewingId] = useState(null);
 
-  const filtered = useMemo(() => {
+  // Matches the /api/orders/page query params exactly: page, size, status, warehouseId, customerId, sortBy, sortDir
+  const queryParams = useMemo(
+    () => ({
+      page: page - 1, // backend "page" param is 0-indexed (Default value: 0)
+      size: PAGE_SIZE,
+      ...(status ? { status } : {}),
+      ...(warehouseId ? { warehouseId } : {}),
+      ...(customerId ? { customerId } : {}),
+      sortBy: "id",
+      sortDir: "asc",
+    }),
+    [page, status, warehouseId, customerId],
+  );
+
+  const { data: orderPage, isLoading } = useOrdersPage(queryParams);
+
+  const totalItems = orderPage?.totalElements ?? 0;
+  const totalPages = Math.max(1, orderPage?.totalPages ?? 1);
+
+  // Backend has no free-text search param, so this only filters the
+  // rows already loaded for the current page.
+  const pageItems = useMemo(() => {
+    const content = orderPage?.content ?? [];
     const q = search.trim().toLowerCase();
-    if (!q) return orders;
-    return orders.filter(
+    if (!q) return content;
+    return content.filter(
       (o) =>
         o.companyName?.toLowerCase().includes(q) ||
         o.warehouseName?.toLowerCase().includes(q) ||
         String(o.id).includes(q),
     );
-  }, [search, orders]); // Axtarış sorğusuna görə sifarişləri filtrləyir
-
-  const totalItems = filtered.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
-  const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  }, [search, orderPage]);
 
   const stats = useMemo(() => {
     const warehouseCount = new Set(orders.map((o) => o.warehouseId)).size;
@@ -183,13 +213,55 @@ const OrderList = () => {
       <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-ink-100 bg-white p-3 dark:border-white/10 dark:bg-ink-900">
         <Input
           value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
-          placeholder="Müştəri, anbar və ya sifariş nömrəsi..."
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Cari səhifədə axtar (Müştəri, anbar və ya sifariş nömrəsi)..."
           className="min-w-[220px] flex-1"
         />
+        <Select
+          value={status}
+          onChange={(e) => {
+            setStatus(e.target.value);
+            setPage(1);
+          }}
+          className="w-auto min-w-[160px]"
+        >
+          <option value="">Bütün statuslar</option>
+          {ORDER_STATUS_OPTIONS.map((s) => (
+            <option key={s} value={s}>
+              {ORDER_STATUS_LABELS[s] || s}
+            </option>
+          ))}
+        </Select>
+        <Select
+          value={warehouseId}
+          onChange={(e) => {
+            setWarehouseId(e.target.value);
+            setPage(1);
+          }}
+          className="w-auto min-w-[180px]"
+        >
+          <option value="">Bütün anbarlar</option>
+          {warehouses.map((w) => (
+            <option key={w.id} value={w.id}>
+              {w.name}
+            </option>
+          ))}
+        </Select>
+        <Select
+          value={customerId}
+          onChange={(e) => {
+            setCustomerId(e.target.value);
+            setPage(1);
+          }}
+          className="w-auto min-w-[180px]"
+        >
+          <option value="">Bütün müştərilər</option>
+          {customers.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.companyName}
+            </option>
+          ))}
+        </Select>
       </div>
 
       <div className="overflow-hidden rounded-xl border border-ink-100 bg-white dark:border-white/10 dark:bg-ink-900">
@@ -199,7 +271,7 @@ const OrderList = () => {
           rowKey={(row) => row.id}
           emptyText="Hələ satış sifarişi əlavə olunmayıb"
         />
-        {pageItems.length > 0 && (
+        {totalItems > 0 && (
           <Pagination
             page={page}
             totalPages={totalPages}

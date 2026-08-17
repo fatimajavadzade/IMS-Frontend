@@ -25,6 +25,8 @@ const buildProductFormData = ({
 
 export const getProducts = () => api.get("/products");
 
+export const getProductsPage = (params) => api.get("/products/page", { params });
+
 export const getProductById = (id) => api.get(`/products/${id}`);
 
 export const createProduct = (data) => api.post("/products", buildProductFormData(data));

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Boxes,
   Tags,
@@ -21,6 +21,7 @@ import ConfirmDialog from "../../components/ui/ConfirmDialog.jsx";
 import Spinner from "../../components/ui/Spinner.jsx";
 
 import { useProducts } from "../../hooks/products/useProducts";
+import { useProductsPage } from "../../hooks/products/useProductsPage";
 import { useDeleteProduct } from "../../hooks/products/useDeleteProduct";
 
 import ProductFormModal from "./ProductFormModal.jsx";
@@ -29,28 +30,46 @@ import CategoryBrandManager from "./CategoryBrandManager.jsx";
 const PAGE_SIZE = 8;
 
 const ProductList = () => {
-  const { data: products = [], isLoading } = useProducts();
+  // Full (unpaged) list is kept only to power the aggregate stat cards below,
+  // since /api/products/page only returns one page of results at a time.
+  const { data: products = [] } = useProducts();
   const deleteProductMutation = useDeleteProduct();
 
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [page, setPage] = useState(1); // 1-indexed for the UI/Pagination component
   const [formOpen, setFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const [managerOpen, setManagerOpen] = useState(false);
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return products;
-    return products.filter(
-      (p) =>
-        p.name?.toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q),
-    );
-  }, [search, products]);
+  // Debounce the search text before sending it to the backend so we don't
+  // fire a request on every keystroke.
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(timeout);
+  }, [search]);
 
-  const totalItems = filtered.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
-  const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  // Matches the /api/products/page query params exactly: page, size, search, sortBy, sortDir
+  const queryParams = useMemo(
+    () => ({
+      page: page - 1, // backend "page" param is 0-indexed (Default value: 0)
+      size: PAGE_SIZE,
+      ...(debouncedSearch ? { search: debouncedSearch } : {}),
+      sortBy: "id",
+      sortDir: "asc",
+    }),
+    [page, debouncedSearch],
+  );
+
+  const { data: productPage, isLoading } = useProductsPage(queryParams);
+
+  const pageItems = productPage?.content ?? [];
+  const totalItems = productPage?.totalElements ?? 0;
+  const totalPages = Math.max(1, productPage?.totalPages ?? 1);
 
   const stats = useMemo(() => {
     const brandCount = new Set(products.map((p) => p.brand?.id)).size;
@@ -215,10 +234,7 @@ const ProductList = () => {
       <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-ink-100 bg-white p-3 dark:border-white/10 dark:bg-ink-900">
         <Input
           value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
+          onChange={(e) => setSearch(e.target.value)}
           placeholder="Məhsul adı, SKU və ya barkod..."
           className="min-w-[220px] flex-1"
         />
@@ -235,7 +251,7 @@ const ProductList = () => {
           rowKey={(row) => row.id}
           emptyText="Hələ məhsul əlavə olunmayıb"
         />
-        {pageItems.length > 0 && (
+        {totalItems > 0 && (
           <Pagination
             page={page}
             totalPages={totalPages}

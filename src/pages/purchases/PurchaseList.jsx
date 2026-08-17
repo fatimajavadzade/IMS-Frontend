@@ -12,14 +12,20 @@ import PageHeader from "../../components/ui/PageHeader.jsx";
 import StatCard from "../../components/ui/StatCard.jsx";
 import Button from "../../components/ui/Button.jsx";
 import Input from "../../components/ui/Input.jsx";
+import Select from "../../components/ui/Select.jsx";
 import Badge from "../../components/ui/Badge.jsx";
 import DataTable from "../../components/ui/DataTable.jsx";
 import Pagination from "../../components/ui/Pagination.jsx";
 import Spinner from "../../components/ui/Spinner.jsx";
 
 import { usePurchases } from "../../hooks/purchases/usePurchases";
-import { PURCHASE_STATUS_LABELS } from "../../constants/purchaseStatus.js";
-import { PURCHASE_STATUS_TONES } from "../../constants/purchaseStatus.js";
+import { usePurchasesPage } from "../../hooks/purchases/usePurchasesPage";
+import { useWarehouses } from "../../hooks/warehouses/useWarehouses";
+import {
+  PURCHASE_STATUS_LABELS,
+  PURCHASE_STATUS_TONES,
+  PURCHASE_STATUS_OPTIONS,
+} from "../../constants/purchaseStatus.js";
 
 import PurchaseFormModal from "./PurchaseFormModal.jsx";
 import PurchaseDetailModal from "./PurchaseDetailModal.jsx";
@@ -33,27 +39,49 @@ const formatMoney = (value) =>
   }).format(value ?? 0);
 
 const PurchaseList = () => {
-  const { data: purchases = [], isLoading } = usePurchases();
+  // Full (unpaged) list is kept only to power the aggregate stat cards below,
+  // since /api/purchases/page only returns one page of results at a time.
+  const { data: purchases = [] } = usePurchases();
+  const { data: warehouses = [] } = useWarehouses();
 
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
+  const [status, setStatus] = useState("");
+  const [warehouseId, setWarehouseId] = useState("");
+  const [page, setPage] = useState(1); // 1-indexed for the UI/Pagination component
   const [formOpen, setFormOpen] = useState(false);
   const [viewingId, setViewingId] = useState(null);
 
-  const filtered = useMemo(() => {
+  // Matches the /api/purchases/page query params exactly: page, size, status, warehouseId, sortBy, sortDir
+  const queryParams = useMemo(
+    () => ({
+      page: page - 1, // backend "page" param is 0-indexed (Default value: 0)
+      size: PAGE_SIZE,
+      ...(status ? { status } : {}),
+      ...(warehouseId ? { warehouseId } : {}),
+      sortBy: "id",
+      sortDir: "asc",
+    }),
+    [page, status, warehouseId],
+  );
+
+  const { data: purchasePage, isLoading } = usePurchasesPage(queryParams);
+
+  const totalItems = purchasePage?.totalElements ?? 0;
+  const totalPages = Math.max(1, purchasePage?.totalPages ?? 1);
+
+  // Backend has no free-text search param, so this only filters the
+  // rows already loaded for the current page.
+  const pageItems = useMemo(() => {
+    const content = purchasePage?.content ?? [];
     const q = search.trim().toLowerCase();
-    if (!q) return purchases;
-    return purchases.filter(
+    if (!q) return content;
+    return content.filter(
       (p) =>
         p.supplierName?.toLowerCase().includes(q) ||
         p.warehouseName?.toLowerCase().includes(q) ||
         String(p.id).includes(q),
     );
-  }, [search, purchases]); // Axtarış sorğusuna görə sifarişləri filtrləyir
-
-  const totalItems = filtered.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
-  const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  }, [search, purchasePage]);
 
   const stats = useMemo(() => {
     const warehouseCount = new Set(purchases.map((p) => p.warehouseId)).size;
@@ -181,13 +209,40 @@ const PurchaseList = () => {
       <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-ink-100 bg-white p-3 dark:border-white/10 dark:bg-ink-900">
         <Input
           value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
-          placeholder="Təchizatçı, anbar və ya sifariş nömrəsi..."
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Cari səhifədə axtar (Təchizatçı, anbar və ya sifariş nömrəsi)..."
           className="min-w-[220px] flex-1"
         />
+        <Select
+          value={status}
+          onChange={(e) => {
+            setStatus(e.target.value);
+            setPage(1);
+          }}
+          className="w-auto min-w-[160px]"
+        >
+          <option value="">Bütün statuslar</option>
+          {PURCHASE_STATUS_OPTIONS.map((s) => (
+            <option key={s} value={s}>
+              {PURCHASE_STATUS_LABELS[s] || s}
+            </option>
+          ))}
+        </Select>
+        <Select
+          value={warehouseId}
+          onChange={(e) => {
+            setWarehouseId(e.target.value);
+            setPage(1);
+          }}
+          className="w-auto min-w-[180px]"
+        >
+          <option value="">Bütün anbarlar</option>
+          {warehouses.map((w) => (
+            <option key={w.id} value={w.id}>
+              {w.name}
+            </option>
+          ))}
+        </Select>
       </div>
 
       <div className="overflow-hidden rounded-xl border border-ink-100 bg-white dark:border-white/10 dark:bg-ink-900">
@@ -197,7 +252,7 @@ const PurchaseList = () => {
           rowKey={(row) => row.id}
           emptyText="Hələ satınalma sifarişi əlavə olunmayıb"
         />
-        {pageItems.length > 0 && (
+        {totalItems > 0 && (
           <Pagination
             page={page}
             totalPages={totalPages}

@@ -13,15 +13,18 @@ import PageHeader from "../../components/ui/PageHeader.jsx";
 import StatCard from "../../components/ui/StatCard.jsx";
 import Button from "../../components/ui/Button.jsx";
 import Input from "../../components/ui/Input.jsx";
+import Select from "../../components/ui/Select.jsx";
 import Badge from "../../components/ui/Badge.jsx";
 import DataTable from "../../components/ui/DataTable.jsx";
 import Pagination from "../../components/ui/Pagination.jsx";
 import Spinner from "../../components/ui/Spinner.jsx";
 
 import { useTransfers } from "../../hooks/transfers/useTransfers";
+import { useTransfersPage } from "../../hooks/transfers/useTransfersPage";
 import {
   TRANSFER_STATUS_LABELS,
   TRANSFER_STATUS_TONES,
+  TRANSFER_STATUS_OPTIONS,
 } from "../../constants/transferStatus";
 
 import TransferFormModal from "./TransferFormModal.jsx";
@@ -30,27 +33,46 @@ import TransferDetailModal from "./TransferDetailModal.jsx";
 const PAGE_SIZE = 8;
 
 const TransferList = () => {
-  const { data: transfers = [], isLoading } = useTransfers();
+  // Full (unpaged) list is kept only to power the aggregate stat cards below,
+  // since /api/transfers/page only returns one page of results at a time.
+  const { data: transfers = [] } = useTransfers();
 
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
+  const [status, setStatus] = useState("");
+  const [page, setPage] = useState(1); // 1-indexed for the UI/Pagination component
   const [formOpen, setFormOpen] = useState(false);
   const [viewingId, setViewingId] = useState(null);
 
-  const filtered = useMemo(() => {
+  // Matches the /api/transfers/page query params exactly: page, size, sortBy, sortDir, status
+  const queryParams = useMemo(
+    () => ({
+      page: page - 1, // backend "page" param is 0-indexed (Default value: 0)
+      size: PAGE_SIZE,
+      ...(status ? { status } : {}),
+      sortBy: "id",
+      sortDir: "desc",
+    }),
+    [page, status],
+  );
+
+  const { data: transferPage, isLoading } = useTransfersPage(queryParams);
+
+  const totalItems = transferPage?.totalElements ?? 0;
+  const totalPages = Math.max(1, transferPage?.totalPages ?? 1);
+
+  // Backend has no free-text search param, so this only filters the
+  // rows already loaded for the current page.
+  const pageItems = useMemo(() => {
+    const content = transferPage?.content ?? [];
     const q = search.trim().toLowerCase();
-    if (!q) return transfers;
-    return transfers.filter(
+    if (!q) return content;
+    return content.filter(
       (t) =>
         t.fromWarehouseName?.toLowerCase().includes(q) ||
         t.toWarehouseName?.toLowerCase().includes(q) ||
         String(t.id).includes(q),
     );
-  }, [search, transfers]); // Axtarış sorğusuna görə hərəkətləri filtrləyir
-
-  const totalItems = filtered.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
-  const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  }, [search, transferPage]);
 
   const stats = useMemo(() => {
     const warehouseCount = new Set(
@@ -179,13 +201,25 @@ const TransferList = () => {
       <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-ink-100 bg-white p-3 dark:border-white/10 dark:bg-ink-900">
         <Input
           value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
-          placeholder="Anbar adı və ya hərəkət nömrəsi..."
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Cari səhifədə axtar (Anbar adı və ya hərəkət nömrəsi)..."
           className="min-w-[220px] flex-1"
         />
+        <Select
+          value={status}
+          onChange={(e) => {
+            setStatus(e.target.value);
+            setPage(1);
+          }}
+          className="w-auto min-w-[180px]"
+        >
+          <option value="">Bütün statuslar</option>
+          {TRANSFER_STATUS_OPTIONS.map((s) => (
+            <option key={s} value={s}>
+              {TRANSFER_STATUS_LABELS[s] || s}
+            </option>
+          ))}
+        </Select>
       </div>
 
       <div className="overflow-hidden rounded-xl border border-ink-100 bg-white dark:border-white/10 dark:bg-ink-900">
@@ -195,7 +229,7 @@ const TransferList = () => {
           rowKey={(row) => row.id}
           emptyText="Hələ anbar hərəkəti əlavə olunmayıb"
         />
-        {pageItems.length > 0 && (
+        {totalItems > 0 && (
           <Pagination
             page={page}
             totalPages={totalPages}

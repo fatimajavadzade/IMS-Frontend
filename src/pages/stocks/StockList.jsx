@@ -14,6 +14,7 @@ import PageHeader from "../../components/ui/PageHeader.jsx";
 import StatCard from "../../components/ui/StatCard.jsx";
 import Button from "../../components/ui/Button.jsx";
 import Input from "../../components/ui/Input.jsx";
+import Select from "../../components/ui/Select.jsx";
 import Badge from "../../components/ui/Badge.jsx";
 import DataTable from "../../components/ui/DataTable.jsx";
 import Pagination from "../../components/ui/Pagination.jsx";
@@ -21,7 +22,9 @@ import ConfirmDialog from "../../components/ui/ConfirmDialog.jsx";
 import Spinner from "../../components/ui/Spinner.jsx";
 
 import { useStocks } from "../../hooks/stocks/useStocks";
+import { useStocksPage } from "../../hooks/stocks/useStocksPage";
 import { useDeleteStock } from "../../hooks/stocks/useDeleteStock";
+import { useWarehouses } from "../../hooks/warehouses/useWarehouses";
 
 import StockFormModal from "./StockFormModal.jsx";
 
@@ -29,29 +32,47 @@ const PAGE_SIZE = 8;
 const LOW_STOCK_THRESHOLD = 10;
 
 const StockList = () => {
-  const { data: stocks = [], isLoading } = useStocks();
+  const { data: stocks = [] } = useStocks();
   const deleteStockMutation = useDeleteStock();
+  const { data: warehouses = [] } = useWarehouses();
 
   const [search, setSearch] = useState("");
+  const [warehouseId, setWarehouseId] = useState("");
   const [page, setPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [editingStock, setEditingStock] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
 
-  const filtered = useMemo(() => {
+  // Matches the /api/stocks/page query params exactly: page, size, warehouseId, sortBy, sortDir
+  const queryParams = useMemo(
+    () => ({
+      page: page - 1, // backend "page" param is 0-indexed (Default value: 0)
+      size: PAGE_SIZE,
+      ...(warehouseId ? { warehouseId } : {}),
+      sortBy: "id",
+      sortDir: "asc",
+    }),
+    [page, warehouseId],
+  );
+
+  const { data: stockPage, isLoading } = useStocksPage(queryParams);
+
+  const totalItems = stockPage?.totalElements ?? 0;
+  const totalPages = Math.max(1, stockPage?.totalPages ?? 1);
+
+  // Backend has no free-text search param, so this only filters the
+  // rows already loaded for the current page.
+  const pageItems = useMemo(() => {
+    const content = stockPage?.content ?? [];
     const q = search.trim().toLowerCase();
-    if (!q) return stocks;
-    return stocks.filter(
+    if (!q) return content;
+    return content.filter(
       (s) =>
         s.product?.name?.toLowerCase().includes(q) ||
         s.product?.sku?.toLowerCase().includes(q) ||
         s.warehouse?.name?.toLowerCase().includes(q),
     );
-  }, [search, stocks]); // Filter stocks based on search query
-
-  const totalItems = filtered.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
-  const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  }, [search, stockPage]);
 
   const stats = useMemo(() => {
     const warehouseCount = new Set(stocks.map((s) => s.warehouse?.id)).size;
@@ -202,13 +223,25 @@ const StockList = () => {
       <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-ink-100 bg-white p-3 dark:border-white/10 dark:bg-ink-900">
         <Input
           value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
-          placeholder="Məhsul adı, SKU və ya anbar..."
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Cari səhifədə axtar (Məhsul adı, SKU və ya anbar)..."
           className="min-w-[220px] flex-1"
         />
+        <Select
+          value={warehouseId}
+          onChange={(e) => {
+            setWarehouseId(e.target.value);
+            setPage(1);
+          }}
+          className="w-auto min-w-[180px]"
+        >
+          <option value="">Bütün anbarlar</option>
+          {warehouses.map((w) => (
+            <option key={w.id} value={w.id}>
+              {w.name}
+            </option>
+          ))}
+        </Select>
       </div>
 
       <div className="overflow-hidden rounded-xl border border-ink-100 bg-white dark:border-white/10 dark:bg-ink-900">
@@ -218,7 +251,7 @@ const StockList = () => {
           rowKey={(row) => row.id}
           emptyText="Hələ stok qeydi əlavə olunmayıb"
         />
-        {pageItems.length > 0 && (
+        {totalItems > 0 && (
           <Pagination
             page={page}
             totalPages={totalPages}

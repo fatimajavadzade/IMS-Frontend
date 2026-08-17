@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, Pencil, Trash2, Mail, Phone } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -10,7 +10,7 @@ import Pagination from "../../components/ui/Pagination.jsx";
 import ConfirmDialog from "../../components/ui/ConfirmDialog.jsx";
 import Spinner from "../../components/ui/Spinner.jsx";
 
-import { useCustomers } from "../../hooks/customers/useCustomers";
+import { useCustomersPage } from "../../hooks/customers/useCustomersPage";
 import { useDeleteCustomer } from "../../hooks/customers/useDeleteCustomer";
 
 import CustomerFormModal from "./CustomerFormModal.jsx";
@@ -18,31 +18,42 @@ import CustomerFormModal from "./CustomerFormModal.jsx";
 const PAGE_SIZE = 8;
 
 const CustomerList = () => {
-  const { data: customers = [], isLoading } = useCustomers();
   const deleteCustomerMutation = useDeleteCustomer();
 
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [page, setPage] = useState(1); // 1-indexed for the UI/Pagination component
   const [formOpen, setFormOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return customers;
-    return customers.filter(
-      (c) =>
-        c.companyName?.toLowerCase().includes(q) ||
-        c.voen?.toLowerCase().includes(q) ||
-        c.contactPerson?.toLowerCase().includes(q) ||
-        c.email?.toLowerCase().includes(q) ||
-        c.phone?.toLowerCase().includes(q),
-    );
-  }, [search, customers]);
+  // Debounce the search text before sending it to the backend so we don't
+  // fire a request on every keystroke.
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(timeout);
+  }, [search]);
 
-  const totalItems = filtered.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
-  const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  // Matches the /api/customers/page query params exactly: page, size, search, sortBy, sortDir
+  const queryParams = useMemo(
+    () => ({
+      page: page - 1, // backend "page" param is 0-indexed (Default value: 0)
+      size: PAGE_SIZE,
+      ...(debouncedSearch ? { search: debouncedSearch } : {}),
+      sortBy: "id",
+      sortDir: "asc",
+    }),
+    [page, debouncedSearch],
+  );
+
+  const { data: customerPage, isLoading } = useCustomersPage(queryParams);
+
+  const pageItems = customerPage?.content ?? [];
+  const totalItems = customerPage?.totalElements ?? 0;
+  const totalPages = Math.max(1, customerPage?.totalPages ?? 1);
 
   const openCreate = () => {
     setEditingCustomer(null);
@@ -160,10 +171,7 @@ const CustomerList = () => {
       <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-ink-100 bg-white p-3 dark:border-white/10 dark:bg-ink-900">
         <Input
           value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
+          onChange={(e) => setSearch(e.target.value)}
           placeholder="Şirkət adı, VÖEN, əlaqədar şəxs..."
           className="min-w-55 flex-1"
         />
@@ -176,7 +184,7 @@ const CustomerList = () => {
           rowKey={(row) => row.id}
           emptyText="Hələ müştəri əlavə olunmayıb"
         />
-        {pageItems.length > 0 && (
+        {totalItems > 0 && (
           <Pagination
             page={page}
             totalPages={totalPages}

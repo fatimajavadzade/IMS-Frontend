@@ -2,6 +2,8 @@ import api from "./axios";
 
 export const getStocks = () => api.get("/stocks");
 
+export const getStocksPage = (params) => api.get("/stocks/page", { params });
+
 export const getStockById = (id) => api.get(`/stocks/${id}`);
 
 export const createStock = (data) => api.post("/stocks", data);

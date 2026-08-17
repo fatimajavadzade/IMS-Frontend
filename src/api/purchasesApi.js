@@ -2,6 +2,8 @@ import api from "./axios";
 
 export const getPurchases = () => api.get("/purchases");
 
+export const getPurchasesPage = (params) => api.get("/purchases/page", { params });
+
 export const getPurchaseById = (id) => api.get(`/purchases/${id}`);
 
 export const createPurchase = (data) => api.post("/purchases", data);
