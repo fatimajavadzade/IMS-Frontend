@@ -16,10 +16,6 @@ function NotFound() {
           </div>
         </div>
 
-        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-700 dark:text-brand-400">
-          404 Error
-        </p>
-
         <h1 className="font-display text-4xl font-bold text-ink-900 dark:text-ink-100">
           Səhifə tapılmadı
         </h1>
@@ -39,7 +35,10 @@ function NotFound() {
             Geri dön
           </Button>
 
-          <Link to={isAuthenticated ? "/dashboard" : "/login"} className="w-full sm:w-auto">
+          <Link
+            to={isAuthenticated ? "/dashboard" : "/login"}
+            className="w-full sm:w-auto"
+          >
             <Button type="button" className="w-full sm:w-auto">
               <Home className="h-4 w-4" />
               Ana səhifə

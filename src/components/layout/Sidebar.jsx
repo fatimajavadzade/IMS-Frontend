@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, Link } from "react-router-dom";
 import {
   LayoutDashboard,
   Package,
@@ -112,7 +112,8 @@ function Sidebar() {
       </div>
 
       <div className="px-3 pt-4">
-        <button
+        <Link
+          to="/products"
           title="Yeni Məhsul"
           className={`flex w-full items-center justify-center gap-2 rounded-lg bg-brand-700 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800 dark:bg-brand-600 dark:hover:bg-brand-500 ${
             collapsed ? "px-0" : "px-4"
@@ -120,7 +121,7 @@ function Sidebar() {
         >
           <Plus className="h-4 w-4 shrink-0" />
           {!collapsed && "Yeni Məhsul"}
-        </button>
+        </Link>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4">
