@@ -10,11 +10,18 @@ const buildProductFormData = ({
 }) => {
   const formData = new FormData();
 
-  if (name !== undefined) formData.append("name", name);
-  if (sku !== undefined) formData.append("sku", sku);
-  if (price !== undefined) formData.append("price", price);
-  if (brandId !== undefined) formData.append("brandId", brandId);
-  if (categoryId !== undefined) formData.append("categoryId", categoryId);
+  const product = {
+    name,
+    sku,
+    price,
+    brandId,
+    categoryId,
+  };
+
+  formData.append(
+    "product",
+    new Blob([JSON.stringify(product)], { type: "application/json" }),
+  );
 
   if (image instanceof File) {
     formData.append("image", image);
