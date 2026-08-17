@@ -8,22 +8,14 @@ import {
 
 import toast from "react-hot-toast";
 
-import {
-  clearTokens,
-  getRefreshToken,
-  getToken,
-  setTokens,
-} from "../api/axios.js";
+import { clearTokens, getToken, setTokens } from "../api/axios.js";
 
 const AuthContext = createContext(null);
-//! bax
-
-const USER_KEY = "ims-user";
 
 function readStoredUser() {
   try {
-    const raw = localStorage.getItem(USER_KEY);
-    return raw ? JSON.parse(raw) : null;
+    const user = localStorage.getItem("ims-user");
+    return user ? JSON.parse(user) : null;
   } catch {
     return null;
   }
@@ -32,9 +24,7 @@ function readStoredUser() {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(readStoredUser);
   const [token, setToken] = useState(getToken());
-  const [refreshToken, setRefreshTokenState] = useState(getRefreshToken());
 
-  // login cavabı { token, refreshToken, ...user } formasındadır.
   const login = useCallback((data) => {
     const {
       token: newToken,
@@ -42,28 +32,30 @@ export function AuthProvider({ children }) {
       ...userData
     } = data;
 
-    localStorage.setItem(USER_KEY, JSON.stringify(userData));
-    setTokens({ token: newToken, refreshToken: newRefreshToken });
+    if (!newToken || !newRefreshToken) {
+      throw new Error("Login cavabında token məlumatları yoxdur.");
+    }
+
+    localStorage.setItem("ims-user", JSON.stringify(userData));
+
+    setTokens({
+      token: newToken,
+      refreshToken: newRefreshToken,
+    });
 
     setUser(userData);
     setToken(newToken);
-    setRefreshTokenState(newRefreshToken);
   }, []);
 
-  // Yalnız client-side sessiyanı təmizləyir. Backend-ə "logout" sorğusu
-  // src/hooks/auth/useLogout.js vasitəsilə ayrıca göndərilir.
   const logout = useCallback(() => {
-    localStorage.removeItem(USER_KEY);
+    localStorage.removeItem("ims-user");
     clearTokens();
 
     setUser(null);
     setToken(null);
-    setRefreshTokenState(null);
   }, []);
 
-  // axios.js-dəki interceptor refresh token ilə tokeni yeniləyə bilmədikdə
-  // ("auth:force-logout" hadisəsini yayır) sessiyanı burada təmizləyirik ki,
-  // ProtectedRoute avtomatik olaraq istifadəçini /login-ə yönləndirsin.
+  //! Handle force logout event
   useEffect(() => {
     const handleForceLogout = () => {
       logout();
@@ -72,8 +64,9 @@ export function AuthProvider({ children }) {
 
     window.addEventListener("auth:force-logout", handleForceLogout);
 
-    return () =>
+    return () => {
       window.removeEventListener("auth:force-logout", handleForceLogout);
+    };
   }, [logout]);
 
   return (
@@ -81,7 +74,6 @@ export function AuthProvider({ children }) {
       value={{
         user,
         token,
-        refreshToken,
         login,
         logout,
         isAuthenticated: !!token,

@@ -1,4 +1,3 @@
-// Backend-dən gələn satış sifariş statusları.
 export const ORDER_STATUS = {
   PENDING: "PENDING",
   COMPLETED: "COMPLETED",

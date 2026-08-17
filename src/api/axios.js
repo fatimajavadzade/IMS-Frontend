@@ -1,7 +1,4 @@
 import axios from "axios";
-//! bax
-const TOKEN_KEY = "ims-token";
-const REFRESH_TOKEN_KEY = "ims-refresh-token";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -10,27 +7,22 @@ const api = axios.create({
   },
 });
 
-// ---- Token helper-ləri (localStorage üzərindən vahid mənbə) ----
+// Token helpers
+export const getToken = () => localStorage.getItem("ims-token");
 
-export const getToken = () => localStorage.getItem(TOKEN_KEY);
-export const getRefreshToken = () => localStorage.getItem(REFRESH_TOKEN_KEY);
+export const getRefreshToken = () => localStorage.getItem("ims-refresh-token");
 
-export const setTokens = ({ token, refreshToken } = {}) => {
-  if (token) localStorage.setItem(TOKEN_KEY, token);
-  if (refreshToken) localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+export const setTokens = ({ token, refreshToken }) => {
+  localStorage.setItem("ims-token", token);
+  localStorage.setItem("ims-refresh-token", refreshToken);
 };
 
 export const clearTokens = () => {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  localStorage.removeItem("ims-token");
+  localStorage.removeItem("ims-refresh-token");
 };
 
-// AuthContext bu hadisəni dinləyib sessiyanı təmizləyir və istifadəçini
-// /login səhifəsinə yönləndirir (refresh token da etibarsız olduqda).
-const emitForceLogout = () => {
-  window.dispatchEvent(new CustomEvent("auth:force-logout"));
-};
-
+// Hər request-ə access token əlavə et
 api.interceptors.request.use((config) => {
   const token = getToken();
 
@@ -38,8 +30,7 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
-  // FormData (məs. şəkil yükləmə) göndərilirkən "Content-Type" başlığını
-  // silirik ki, brauzer özü multipart boundary ilə birlikdə düzgün təyin etsin.
+  // FormData göndəriləndə Content-Type-ı browser özü təyin etsin
   if (config.data instanceof FormData) {
     delete config.headers["Content-Type"];
   }
@@ -47,91 +38,54 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Eyni anda bir neçə sorğu 401 alarsa, yalnız BİR refresh sorğusu göndərilir,
-// digərləri nəticəni gözləyib sonra öz orijinal sorğularını təkrarlayır.
-let isRefreshing = false;
-let pendingQueue = [];
-
-const resolveQueue = (error, token = null) => {
-  pendingQueue.forEach(({ resolve, reject }) => {
-    if (error) reject(error);
-    else resolve(token);
-  });
-
-  pendingQueue = [];
-};
-
-// Bu endpoint-lərə edilən sorğularda 401 alınsa belə refresh cəhdi edilmir
-// (əks halda sonsuz dövrəyə düşərik).
-const AUTH_EXEMPT_URLS = ["/auth/login", "/auth/register", "/auth/refresh"];
-
-const isAuthExempt = (url = "") =>
-  AUTH_EXEMPT_URLS.some((path) => url.includes(path));
-
+//! 401 olduqda refresh token ilə yeni access token al
 api.interceptors.response.use(
   (response) => response,
+
   async (error) => {
     const originalRequest = error.config;
 
     if (
-      !error.response ||
-      error.response.status !== 401 ||
+      error.response?.status !== 401 ||
       !originalRequest ||
-      isAuthExempt(originalRequest.url) ||
       originalRequest._retry
     ) {
       return Promise.reject(error);
     }
 
-    const refreshTokenValue = getRefreshToken();
+    const refreshToken = getRefreshToken();
 
-    if (!refreshTokenValue) {
+    if (!refreshToken) {
       clearTokens();
-      emitForceLogout();
+      window.location.href = "/login";
+
       return Promise.reject(error);
     }
 
-    if (isRefreshing) {
-      return new Promise((resolve, reject) => {
-        pendingQueue.push({ resolve, reject });
-      }).then((newToken) => {
-        originalRequest._retry = true;
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
-        return api(originalRequest);
-      });
-    }
-
     originalRequest._retry = true;
-    isRefreshing = true;
 
     try {
-      // Diqqət: burada `api` yox, təmiz `axios` istifadə olunur ki,
-      // interceptor-lar bu sorğuya təsir etməsin (sonsuz dövrənin qarşısı alınır).
       const { data } = await axios.post(
         `${import.meta.env.VITE_API_URL}/auth/refresh`,
-        { refreshToken: refreshTokenValue },
+        { refreshToken },
       );
 
-      const newToken = data?.token ?? data?.accessToken;
-      const newRefreshToken = data?.refreshToken ?? refreshTokenValue;
+      const newToken = data.token;
+      const newRefreshToken = data.refreshToken;
 
-      if (!newToken) {
-        throw new Error("Refresh cavabında token tapılmadı.");
-      }
-
-      setTokens({ token: newToken, refreshToken: newRefreshToken });
-
-      resolveQueue(null, newToken);
+      setTokens({
+        token: newToken,
+        refreshToken: newRefreshToken,
+      });
 
       originalRequest.headers.Authorization = `Bearer ${newToken}`;
+
       return api(originalRequest);
     } catch (refreshError) {
-      resolveQueue(refreshError, null);
       clearTokens();
-      emitForceLogout();
+      window.location.href = "/login";
+
       return Promise.reject(refreshError);
-    } finally {
-      isRefreshing = false;
     }
   },
 );

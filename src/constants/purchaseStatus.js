@@ -1,4 +1,3 @@
-// Backend-dən gələn satınalma statusları.
 export const PURCHASE_STATUS = {
   PENDING: "PENDING",
   RECEIVED: "RECEIVED",
